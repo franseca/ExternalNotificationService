@@ -1,0 +1,7 @@
+Spring Boot: Customize the Jackson ObjectMapper -https://www.baeldung.com/spring-boot-customize-jackson-objectmapper
+How to parse REST API json data comprising of uppercase attribute name, Date and Instant in a java spring application ? - https://hpratap.medium.com/how-to-parse-rest-api-json-data-comprising-of-uppercase-attribute-name-date-and-instant-in-a-java-6f187ef16ac9
+Ignore Null Fields with Jackson - https://www.baeldung.com/jackson-ignore-null-fields
+Introduction to JsonPath - https://www.baeldung.com/guide-to-jayway-jsonpath	
+Spring RestTemplate Timeout - https://hellokoding.com/spring-resttemplate-timeout/
+Configuring Timeouts with Spring RestTemplate - https://howtodoinjava.com/spring-boot2/resttemplate/resttemplate-timeout-example/
+Mongo tries to connect automatically to port 27017(localhost) - https://stackoverflow.com/questions/34414367/mongo-tries-to-connect-automatically-to-port-27017localhost
