@@ -12,8 +12,8 @@ public class GsCustomResponseMappingUtil {
    private static final Logger logger = LoggerFactory.getLogger(GsCustomResponseMappingUtil.class);
 
    public static JSONObject proccessException(Integer code, String message) {
-      logger.info("Started GsCustomResponseMappingUtil.class : Proccess Exception message");
-      Map<String, Object> errmap = new HashMap();
+      logger.debug("Started GsCustomResponseMappingUtil.class : Proccess Exception message");
+      Map<String, Object> errmap = new HashMap<String, Object>();
       if (null != code && code > 0) {
          errmap.put("code", code);
       } else {
@@ -23,10 +23,10 @@ public class GsCustomResponseMappingUtil {
       if (null != message && !message.isBlank()) {
          errmap.put("message", message);
       } else {
-         errmap.put("message", "GENERIC SERVICE PROCESS FAILED");
+         errmap.put("message", "Generic service process failed");
       }
 
-      logger.info("Ended GsCustomResponseMappingUtil.class");
+      logger.debug("Ended GsCustomResponseMappingUtil.class");
       JSONObject errRes = new JSONObject();
       errRes.put("error", errmap);
       return errRes;
@@ -35,7 +35,7 @@ public class GsCustomResponseMappingUtil {
    public static JSONObject successResponseFormat(Integer code, String message) {
       logger.info("Started GsCustomResponseMappingUtil.class : Proccess Success Message");
       String successFormat = "{\"response\":{\"body\":{\"code\":\"{:code}\",\"message\":\"{:message}\"}}}";
-      Map<String, Object> values = new HashMap();
+      Map<String, Object> values = new HashMap<String, Object>();
       if (null != code && code > 0) {
          values.put("code", code);
       } else {

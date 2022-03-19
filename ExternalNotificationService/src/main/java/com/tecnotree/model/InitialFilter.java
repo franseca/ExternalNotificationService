@@ -25,5 +25,26 @@ public class InitialFilter {
 		this.walletId = walletId;
 	}
 	
-	
+	public boolean validateRule(String rule) throws Exception {
+		if(this.operationCode == null) {
+			throw new Exception("Not found operationCode property in the rule No." + rule);
+		}else if(this.operationCode.equals(""))
+			throw new Exception("Not found a value in the operationCode property in the rule No." + rule);
+		
+		
+		if(this.rejectionCode == null) {
+			throw new Exception("Not found rejectionCode property in the rule No." + rule);
+		}else if(this.rejectionCode.equals(""))
+			throw new Exception("Not found a value in the rejectionCode property in the rule No." + rule);
+		
+		
+		if(this.walletId == null) {
+			throw new Exception("Not found walletId property in the rule No." + rule);
+		}else if(this.walletId.equals(""))
+			throw new Exception("Not found a value in the walletId property in the rule No." + rule);
+		
+		
+		return true;
+		
+	}
 }

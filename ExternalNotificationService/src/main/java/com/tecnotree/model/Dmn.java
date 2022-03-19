@@ -49,4 +49,33 @@ public class Dmn {
 	public String getUri(String table) {
 		return DECISION_DEFINITION + table;
 	}
+	
+	public boolean validateRule(String rule) throws Exception {
+		if(this.table == null) {
+			throw new Exception("Not found table property in the rule No." + rule);
+		}else if(this.table.equals(""))
+			throw new Exception("Not found a value in the table property in the rule No." + rule);
+				
+		if(this.sourceObject == null) {
+			throw new Exception("Not found sourceObject property in the rule No." + rule);
+		}else if(this.sourceObject.equals(""))
+			throw new Exception("Not found a value in the sourceObject property in the rule No." + rule);
+				
+		if(this.inputColumn == null) {
+			throw new Exception("Not found inputColumn property in the rule No." + rule);
+		}else if(this.inputColumn.equals(""))
+			throw new Exception("Not found a value in the inputColumn property in the rule No." + rule);
+		
+		if(this.outputColum == null) {
+			throw new Exception("Not found outputColum property in the rule No." + rule);
+		}else if(this.outputColum.equals(""))
+			throw new Exception("Not found a value in the outputColum property in the rule No." + rule);
+		
+		if(this.rejectTx == null) {
+			throw new Exception("Not found rejectTx property in the rule No." + rule);
+		}else if(this.rejectTx.equals(""))
+			throw new Exception("Not found a value in the rejectTx property in the rule No." + rule);
+		
+		return true;
+	}
 }

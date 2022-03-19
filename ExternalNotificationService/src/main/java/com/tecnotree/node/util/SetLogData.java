@@ -16,11 +16,12 @@ public class SetLogData {
       Document logData = new Document();
       logData.put("timestamp", LocalDateTime.now());
       logData.put("level", logLevel);
-      logData.put("logType", 0);
+      //logData.put("logType", 0);
       logData.put("userName", "system");
       logData.put("threadID", Thread.currentThread().getId());
       logData.put("serviceName", serviceName);
       logData.put("transactionID", transactionId);
+      logData.put("operationName", "REST");
       JSONObject json = null;
 
       try {
@@ -39,7 +40,7 @@ public class SetLogData {
       if (code == 200) {
          try {
             statusCode = (Integer)JsonPath.read(response, "$.error.code", new Predicate[0]);
-         } catch (Exception var7) {
+         } catch (Exception e) {
             statusCode = code;
          }
       } else {

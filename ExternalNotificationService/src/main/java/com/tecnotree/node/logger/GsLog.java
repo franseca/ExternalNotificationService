@@ -40,8 +40,8 @@ public class GsLog {
                doc.put("status", errMsg);
                System.out.println(JSONWriter.valueToString(doc));
                GsLog.logMap.remove(rootKey);
-            } catch (Exception var6) {
-               errMsg = var6.getLocalizedMessage();
+            } catch (Exception e) {
+               errMsg = e.getLocalizedMessage();
                GsLog._log.error("Error Occured While Writing The logs -> " + errMsg);
                String msg = null == errMsg ? "LOGS PROCESSING FAILED DUE TO NULL VALUE" : errMsg;
                JSONObject errorRes = GsCustomResponseMappingUtil.proccessException(ExceptionCode.EXCEPTION_CODE, msg);

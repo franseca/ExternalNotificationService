@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.tecnotree.config.ApplicationProperties;
+import com.tecnotree.exception.ExceptionCode;
 import com.tecnotree.model.AdditionalInformation;
 import com.tecnotree.model.DMNResponse;
 import com.tecnotree.model.DMNValues;
@@ -33,6 +34,7 @@ import com.tecnotree.model.Payload;
 import com.tecnotree.model.Rule;
 import com.tecnotree.node.logger.GsLog;
 import com.tecnotree.node.util.SetLogData;
+import com.tecnotree.output.util.GsCustomResponseMappingUtil;
 
 import net.sf.json.JSONObject;
 
@@ -47,23 +49,25 @@ public class ExternalNotificationRestController {
 	Logger logger = LoggerFactory.getLogger(ExternalNotificationRestController.class);
 	
 	Payload payload;
-	private String getResFormat = "{\"message\":\"No Request Body Found\"}";
-	
-	
-	private long timeout = 7000; // DEFAULT TIME OUT (7 SECONDS) 
+		
+	private long TIMEOUT = 7000; // DEFAULT TIME OUT (7 SECONDS) 
+	private String HTTP_SATUS_OK = "200";
 	
 	@Autowired
 	ApplicationProperties applicationProperties;
 		
 	@PostMapping(value="/validate")
-	public ResponseEntity<String> validate(@RequestBody ObjectNode json){
+	public ResponseEntity<String> validate(@RequestBody ObjectNode json) throws Exception{
+		
+		Long _start = System.currentTimeMillis();
+		
+		//SET LOG INITIAL INFORMATION
+		SetLogData logData = new SetLogData();
+		String transactionId;
+		transactionId = logData.setLogInfo(applicationProperties.getServiceName(), applicationProperties.getLogLevel(), json.toString());
+		
 		try {
-			
-			Long _start = System.currentTimeMillis();
-			
-			SetLogData logData = new SetLogData();
-			String transactionId = logData.setLogInfo(applicationProperties.getServiceName(), applicationProperties.getLogLevel(), json.toString());
-			
+			logger.info("Timeout default: " + TIMEOUT + " ms");
 			logger.info("TransactionId ID: " + transactionId);
 	        logger.info("Payload received: " + json.toString());
 	        
@@ -78,29 +82,43 @@ public class ExternalNotificationRestController {
 				ObjectMapper mapperRule = new ObjectMapper();
 				Rule rule = mapperRule.readValue(applicationProperties.get(String.valueOf(i)), Rule.class);
 				
-				logger.info("Rule No." + i + " loaded.");
-				logger.info("Rule No." + i + ": " + applicationProperties.get(String.valueOf(i)) + "\n");
+				//VALLIDATE THE RULE'S STRUCTURE
+				validateRule(rule);
+				
+				//logger.info("Rule No." + i + " loaded.");
+				logger.info("Rule No." + i + ": " + applicationProperties.get(String.valueOf(i)));
 				ruleList.add(rule);
 			}
 			
 			for(int i=0; i < ruleList.size(); i++) {
 				Rule ruleTemp = (Rule)ruleList.get(i);
 				
+				logger.info("Rule No." + ruleTemp.getId() + " validating...");
+				
 				//GET PAYLOAD SENT
 				ObjectMapper mapperPayload = new ObjectMapper();
 				//mapperPayload.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 				Payload payload = mapperPayload.readValue(json.toString(),Payload.class);
 				
+				if(ruleTemp.getRuleDetail().getApplicationName() == null) {
+					logger.info("Not found applicationName property in the Rule No." + ruleTemp.getId() + ": " + ruleTemp.getRuleDetail().getApplicationName());
+					throw new Exception("Not found applicationName property in the Rule No." + ruleTemp.getId() + ": " + ruleTemp.getRuleDetail().getApplicationName());
+				}
+				
 				//VALIDATE INITIAL FILTER
 				if(payload.getRequest().getOperationCode().equalsIgnoreCase(ruleTemp.getRuleDetail().getInitialFilter().getOperationCode())
 						&& payload.getRequest().getRejectionCode().equalsIgnoreCase(ruleTemp.getRuleDetail().getInitialFilter().getRejectionCode())) {
 						
-					//GET TIMEOUT OF THE RULE
-					if(ruleTemp.getRuleDetail().getTimeout() != 0) {
-						timeout = ruleTemp.getRuleDetail().getTimeout();
-					}
+					logger.info("Initial filter 1 validated");
 					
-					logger.info("Timeout configured: " + timeout + " ms");
+					//GET TIMEOUT OF THE RULE
+					if(ruleTemp.getRuleDetail().getTimeout() != null) {
+						logger.info("Timeout configured in the rule "+ ruleTemp.getId() + ": " + TIMEOUT + " ms");
+						TIMEOUT = ruleTemp.getRuleDetail().getTimeout();
+					}else {
+						logger.info("Not found timeout property in the Rule No." + ruleTemp.getId() + ": " + ruleTemp.getRuleDetail().getTimeout());
+						logger.info("Defaul Timeout configured in the Rule No." + ruleTemp.getId() + ": " + TIMEOUT  + " ms");
+					}
 					
 					//VALIDATE DMN TABLE
 					if(!ruleTemp.getRuleDetail().getDmn().getTable().equals("")
@@ -111,32 +129,48 @@ public class ExternalNotificationRestController {
 						
 						//VALIDATE LOGICA ABOUT DMN
 						Payload payloadTemp = validateDMN(ruleTemp, payload, json);
-						
+												
 						if(payloadTemp == null) {//IF VALUE OF THE DMN OUPUT COLUMN IS EQUAL REJECT-TX VALUE
 							continue;
 						}else {
 							payload = payloadTemp;
 						}
 						
+					}else{
+						logger.info("At least one property don't have a value. Verify the DMN properties in the rule");
+						continue;
 					}//END if(!ruleTemp.getRuleDetail().getDmn().getTable().equals("")) {
 										
 					//INVOKE THE OTHER SERVICE
 					if(!ruleTemp.getRuleDetail().getPostHttpRest().equals("")) {
-						logger.info("Invoking Rule " + ruleTemp.getId());
-						ResponseEntity<String> response = new ResponseEntity<String>(callService(ruleTemp.getRuleDetail().getPostHttpRest(), payload), HttpStatus.OK);
-					
-					
-					
+						logger.info("Invoking Post Http Rest...");
+						new ResponseEntity<String>(callService(ruleTemp.getRuleDetail().getPostHttpRest(), payload), HttpStatus.OK);
+					}else {
+						logger.info("Not found PostHttpRest property in the rule");
+						continue;
 					}
 					
 					continue;
 					
+				}else{
+					logger.info("Initial filter 1 no validated");
 				}//END if(_request.getOperationCode().equalsIgnoreCase(ruleTemp.get("operationCode"))
 				
 				if(payload.getRequest().getOperationCode().equalsIgnoreCase(ruleTemp.getRuleDetail().getInitialFilter().getOperationCode())
 						&& payload.getRequest().getWalletId().equalsIgnoreCase(ruleTemp.getRuleDetail().getInitialFilter().getWalletId())
 						&& payload.getRequest().getRejectionCode().equalsIgnoreCase(ruleTemp.getRuleDetail().getInitialFilter().getRejectionCode())) {
 					
+					logger.info("Initial filter 2 validated");
+					
+					//GET TIMEOUT OF THE RULE
+					if(ruleTemp.getRuleDetail().getTimeout() != null) {
+						logger.info("Timeout configured in the rule "+ ruleTemp.getId() + ": " + TIMEOUT + " ms");
+						TIMEOUT = ruleTemp.getRuleDetail().getTimeout();
+					}else {
+						logger.info("Not found timeout property in the Rule No." + ruleTemp.getId() + ": " + ruleTemp.getRuleDetail().getTimeout());
+						logger.info("Defaul Timeout configured in the Rule No." + ruleTemp.getId() + ": " + TIMEOUT  + " ms");
+					}
+					
 					//VALIDATE DMN TABLE
 					if(!ruleTemp.getRuleDetail().getDmn().getTable().equals("")
 							&& !ruleTemp.getRuleDetail().getDmn().getSourceObject().equals("")
@@ -152,28 +186,33 @@ public class ExternalNotificationRestController {
 						}else {
 							payload = payloadTemp;
 						}
-					}//END if(!ruleTemp.getRuleDetail().getDmn().getTable().equals("")
+					}else{
+						logger.info("At least one property don't have a value. Verify the DMN properties in the rule");
+						continue;
+					}//END if(!ruleTemp.getRuleDetail().getDmn().getTable().equals("")) {
 					
 					//INVOKE THE OTHER SERVICE
 					if(!ruleTemp.getRuleDetail().getPostHttpRest().equals("")) {
-						logger.info("Invoking Rule " + ruleTemp.getId());
+						logger.info("Invoking Post Http Rest...");
 						new ResponseEntity<String>(callService(ruleTemp.getRuleDetail().getPostHttpRest(), payload), HttpStatus.OK);
+					}else {
+						logger.info("Not found PostHttpRest property in the rule");
+						continue;
 					}
 					
 					continue;
-				}
+				}else {
+					logger.info("Initial filter 2 no validated");
+				}//END if(payload.getRequest().getOperationCode().equalsIgnoreCase(ruleTemp.getRuleDetail().getInitialFilter().getOperationCode())
 				
 			}//END for(int i=0; i < ruleList.size(); i++) {
 			
-			GsLog.setLog(transactionId, "operationName", "REST");
-	        
-			GsLog.setLog(transactionId, "restCallTimeTaken", (System.currentTimeMillis() - _start));
-	        
-			ResponseEntity<String> response = new ResponseEntity<>("{\"instanceID\":"+transactionId+",\"code\":200}", HttpStatus.OK);//Return object Persona in JSON format 
+			GsLog.setLog(transactionId, "timeTaken", (System.currentTimeMillis() - _start));
+			ResponseEntity<String> response = new ResponseEntity<>("{\"instanceID\":\""+transactionId+"\",\"code\":"+HTTP_SATUS_OK+"}", HttpStatus.OK);
 
 			HttpStatus headers = response.getStatusCode();
 	        Integer _statusCode = headers.value();
-	        GsLog.setLog(transactionId, "extCallStatus", _statusCode);
+	        //GsLog.setLog(transactionId, "extCallStatus", _statusCode);
 	        GsLog.setLog(transactionId, "statusCode", _statusCode);
 	        
 	        String responseBody = (String)response.getBody();
@@ -182,7 +221,7 @@ public class ExternalNotificationRestController {
 	            _rest_response_obj = JSONObject.fromObject(responseBody);
 	            //boolean _string_res_check = _rest_response_obj.containsKey("*");
 	            //logger.info("_string_res_check " + _string_res_check);
-	            JSONObject outputJson = new JSONObject();
+	            //JSONObject outputJson = new JSONObject();
 	            //outputJson.put("responseMap", _rest_response_obj);
 	            //_rest_response_obj = outputJson;
 	            GsLog.setLog(transactionId, "response", _rest_response_obj);
@@ -193,7 +232,10 @@ public class ExternalNotificationRestController {
 			return response;
 			
 		} catch (Exception e) {
-			return new ResponseEntity<>(e.getMessage(), HttpStatus.EXPECTATION_FAILED);
+			logger.info((String)e.getLocalizedMessage());
+			JSONObject errorRes = GsCustomResponseMappingUtil.proccessException(ExceptionCode.EXCEPTION_CODE, (String)e.getLocalizedMessage());
+            logData.sendLogs(transactionId, ExceptionCode.EXCEPTION_CODE, errorRes, _start);
+            throw e;
 		}
 	}
 	
@@ -217,7 +259,7 @@ public class ExternalNotificationRestController {
 	    
 	    //RestTemplate restTemplate = new RestTemplate();
 	    RestTemplate restTemplate = new RestTemplateBuilder()
-	            .setConnectTimeout(Duration.ofMillis(timeout))
+	            .setConnectTimeout(Duration.ofMillis(TIMEOUT))
 	            .build();
 	    HttpHeaders headers = new HttpHeaders();
 	    headers.setContentType(MediaType.APPLICATION_JSON);
@@ -247,7 +289,7 @@ public class ExternalNotificationRestController {
 		
 	    //RestTemplate restTemplate = new RestTemplate(getClientHttpRequestFactory());
 	    RestTemplate restTemplate = new RestTemplateBuilder()
-	            .setConnectTimeout(Duration.ofMillis(timeout))
+	            .setConnectTimeout(Duration.ofMillis(TIMEOUT))
 	            .build();
 	    
 	    HttpHeaders headers = new HttpHeaders();
@@ -257,7 +299,7 @@ public class ExternalNotificationRestController {
 	    	    
 	    String result = restTemplate.postForObject(DMNUri, request, String.class);
 	    
-	    logger.info("DMN Response: " + result + "\n");
+	    logger.info("DMN Response: " + result);
 	    
 	    return result;
 	    
@@ -301,6 +343,8 @@ public class ExternalNotificationRestController {
 			
 			//IF THE VALUE OF THE DMN OUTPUT COLUMN IS EQUAL THE REJECT TX
 			if(dmnOutputColumnValue.equals(ruleTemp.getRuleDetail().getDmn().getRejectTx())) {
+				logger.info("The DMN's output value ("+dmnOutputColumnValue+") is equal a RejectTx ("+ruleTemp.getRuleDetail().getDmn().getRejectTx()+")");
+				logger.info("Exit of the rule and continue with the next rule \n");
 				return null;
 			}
 			
@@ -316,13 +360,30 @@ public class ExternalNotificationRestController {
 			
 			//ADD THE ADDITIONAL INFORMATION TO THE ORIGINAL PAYLOAD
 			_payload.setAdditionalInformation(additionalInformation);
+			logger.info("Additional information added to the payload");
 			
+		}else{
+			
+			logger.info("Not get response from DMN");
 		}//END if(dmnResponse != null) {
 			
 		return _payload;
 	}
 	
-	
+	public boolean validateRule(Rule rule) throws Exception {
+		String idRule = rule.getId();
+		if(rule.validateRule(idRule)){
+			if(rule.getRuleDetail().validateRule(idRule)) {
+				if(rule.getRuleDetail().getInitialFilter().validateRule(idRule)) {
+					if(rule.getRuleDetail().getDmn().validateRule(idRule)) {
+						return true;
+					}
+				}
+			}
+		}
+		
+		return false;
+	}
 	/********************** TEST METHODS ****************************************************/
 	
 	/*private HttpComponentsClientHttpRequestFactory getClientHttpRequestFactory() 

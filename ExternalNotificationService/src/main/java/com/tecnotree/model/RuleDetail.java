@@ -46,5 +46,30 @@ public class RuleDetail {
 		this.timeout = timeout;
 	}
 	
+	public boolean validateRule(String rule) throws Exception {
+		if(this.applicationName == null) {
+			throw new Exception("Not found applicationName property in the rule No." + rule);
+		}else if(this.applicationName.equals(""))
+			throw new Exception("Not found a value in the applicationName property in the rule No." + rule);
+		
+		if(this.initialFilter == null) {
+			throw new Exception("Not found initialFilter property in the rule No." + rule);
+		}
+		
+		if(this.dmn == null) {
+			throw new Exception("Not found dmn property in the rule No." + rule);
+		}
+		
+		if(this.postHttpRest == null) {
+			throw new Exception("Not found postHttpRest property in the rule No." + rule);
+		}else if(this.postHttpRest.equals(""))
+			throw new Exception("Not found a value in the postHttpRest property in the rule No." + rule);
+		
+		if(this.timeout == null) {
+			throw new Exception("Not found timeout property in the rule No." + rule);
+		}//SET A DEFAULT VALUE
+		
+		return true;
+	}
 	
 }
