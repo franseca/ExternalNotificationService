@@ -3,6 +3,7 @@ package com.tecnotree.rest;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,7 @@ import com.tecnotree.model.Rule;
 import com.tecnotree.node.logger.GsLog;
 import com.tecnotree.node.util.SetLogData;
 import com.tecnotree.output.util.GsCustomResponseMappingUtil;
+import com.tecnotree.service.RuleService;
 
 import net.sf.json.JSONObject;
 
@@ -46,7 +48,7 @@ import net.sf.json.JSONObject;
 @RequestMapping("/api/tecnotree")
 public class ExternalNotificationRestController {
 	
-	Logger logger = LoggerFactory.getLogger(ExternalNotificationRestController.class);
+	private final Logger logger = LoggerFactory.getLogger(ExternalNotificationRestController.class);
 	
 	Payload payload;
 		
@@ -55,8 +57,11 @@ public class ExternalNotificationRestController {
 	
 	@Autowired
 	ApplicationProperties applicationProperties;
+	
+	@Autowired
+    private RuleService ruleService;
 		
-	@PostMapping(value="/validate")
+	/*@PostMapping(value="/validate")
 	public ResponseEntity<String> validate(@RequestBody ObjectNode json) throws Exception{
 		
 		Long _start = System.currentTimeMillis();
@@ -237,6 +242,61 @@ public class ExternalNotificationRestController {
             logData.sendLogs(transactionId, ExceptionCode.EXCEPTION_CODE, errorRes, _start);
             throw e;
 		}
+	}*/
+	
+	@PostMapping(value="/validate")
+	public ResponseEntity<String> validate(@RequestBody ObjectNode json) throws Exception{
+		
+		/*Long _start = System.currentTimeMillis();
+		
+		//SET LOG INITIAL INFORMATION
+		SetLogData logData = new SetLogData();
+		String transactionId;
+		transactionId = logData.setLogInfo(applicationProperties.getServiceName(), applicationProperties.getLogLevel(), json.toString());
+		
+		try {*/
+		
+			CompletableFuture<String> cf = ruleService.validate2(json);
+			ResponseEntity<String> response = new ResponseEntity<>(cf.get(), HttpStatus.OK);
+
+			
+			/*GsLog.setLog(transactionId, "timeTaken", (System.currentTimeMillis() - _start));
+			ResponseEntity<String> response = new ResponseEntity<>("{\"instanceID\":\""+transactionId+"\",\"code\":"+HTTP_SATUS_OK+"}", HttpStatus.OK);
+
+			HttpStatus headers = response.getStatusCode();
+	        Integer _statusCode = headers.value();
+	        //GsLog.setLog(transactionId, "extCallStatus", _statusCode);
+	        GsLog.setLog(transactionId, "statusCode", _statusCode);
+	        
+	        String responseBody = (String)response.getBody();
+	        if (null != responseBody && !responseBody.isBlank()) {
+	        	JSONObject _rest_response_obj = new JSONObject();
+	            _rest_response_obj = JSONObject.fromObject(responseBody);
+	            //boolean _string_res_check = _rest_response_obj.containsKey("*");
+	            //logger.info("_string_res_check " + _string_res_check);
+	            //JSONObject outputJson = new JSONObject();
+	            //outputJson.put("responseMap", _rest_response_obj);
+	            //_rest_response_obj = outputJson;
+	            GsLog.setLog(transactionId, "response", _rest_response_obj);
+	        }
+	        
+	        GsLog.sendLogs((String)transactionId);
+	        
+			return response;*/
+			
+			//return ResponseEntity.status(HttpStatus.OK).build();
+			
+
+	        
+	        
+			return response;
+			
+		/*} catch (Exception e) {
+			logger.info((String)e.getLocalizedMessage());
+			JSONObject errorRes = GsCustomResponseMappingUtil.proccessException(ExceptionCode.EXCEPTION_CODE, (String)e.getLocalizedMessage());
+            logData.sendLogs(transactionId, ExceptionCode.EXCEPTION_CODE, errorRes, _start);
+            throw e;
+		}*/
 	}
 	
 	
@@ -370,7 +430,7 @@ public class ExternalNotificationRestController {
 		return _payload;
 	}
 	
-	public boolean validateRule(Rule rule) throws Exception {
+	/*public boolean validateRule(Rule rule) throws Exception {
 		String idRule = rule.getId();
 		if(rule.validateRule(idRule)){
 			if(rule.getRuleDetail().validateRule(idRule)) {
@@ -383,7 +443,7 @@ public class ExternalNotificationRestController {
 		}
 		
 		return false;
-	}
+	}*/
 	/********************** TEST METHODS ****************************************************/
 	
 	/*private HttpComponentsClientHttpRequestFactory getClientHttpRequestFactory() 

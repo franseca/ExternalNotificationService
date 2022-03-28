@@ -38,6 +38,7 @@ public class GsLog {
                Document doc = (Document)GsLog.logMap.get(rootKey);
                errMsg = doc.getInteger("statusCode") == 200 ? "SUCCESS" : "FAILED";
                doc.put("status", errMsg);
+               _log.info(JSONWriter.valueToString(doc));
                System.out.println(JSONWriter.valueToString(doc));
                GsLog.logMap.remove(rootKey);
             } catch (Exception e) {

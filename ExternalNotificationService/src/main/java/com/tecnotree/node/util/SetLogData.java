@@ -18,7 +18,7 @@ public class SetLogData {
       logData.put("level", logLevel);
       //logData.put("logType", 0);
       logData.put("userName", "system");
-      logData.put("threadID", Thread.currentThread().getId());
+      logData.put("threadID", Thread.currentThread().getName());
       logData.put("serviceName", serviceName);
       logData.put("transactionID", transactionId);
       logData.put("operationName", "REST");
