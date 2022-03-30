@@ -30,7 +30,7 @@ public class GsLog {
       logMap.put(rootKey, data);
    }
 
-   public static void sendLogs(String rootKey) {
+   public static void sendLogs(final String rootKey) {
       (new Thread(new Runnable() {
          public void run() {
             String errMsg;
@@ -38,7 +38,7 @@ public class GsLog {
                Document doc = (Document)GsLog.logMap.get(rootKey);
                errMsg = doc.getInteger("statusCode") == 200 ? "SUCCESS" : "FAILED";
                doc.put("status", errMsg);
-               _log.info(JSONWriter.valueToString(doc));
+               _log.info("ExternalNotificationService Response: {}", JSONWriter.valueToString(doc));
                System.out.println(JSONWriter.valueToString(doc));
                GsLog.logMap.remove(rootKey);
             } catch (Exception e) {

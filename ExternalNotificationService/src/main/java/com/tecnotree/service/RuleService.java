@@ -45,7 +45,7 @@ public class RuleService {
 	
 	private long TIMEOUT = 0; 
 	private String HTTP_SATUS_OK = "200";
-	private List<Rule> ruleList = new  ArrayList<>();
+	private List<Rule> ruleList = new  ArrayList<Rule>();
 	
 	@Autowired
 	ApplicationProperties applicationProperties;
@@ -53,267 +53,17 @@ public class RuleService {
 	@Autowired
 	AsyncConfiguration as;
 	
-	@Async
-    public void validate(List<Rule> ruleList, long TIMEOUT, ObjectNode json, String transactionId, Long _start, SetLogData logData) throws Exception {
-		
-		
-			this.TIMEOUT = TIMEOUT;
-			
-			for(int i=0; i < ruleList.size(); i++) {
-				Rule ruleTemp = (Rule)ruleList.get(i);
-				
-				logger.info("Rule No." + ruleTemp.getId() + " validating...");
-				
-				//GET PAYLOAD SENT
-				ObjectMapper mapperPayload = new ObjectMapper();
-				//mapperPayload.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-				Payload payload = mapperPayload.readValue(json.toString(),Payload.class);
-				
-				if(ruleTemp.getRuleDetail().getApplicationName() == null) {
-					logger.info("Not found applicationName property in the Rule No." + ruleTemp.getId() + ": " + ruleTemp.getRuleDetail().getApplicationName());
-					throw new Exception("Not found applicationName property in the Rule No." + ruleTemp.getId() + ": " + ruleTemp.getRuleDetail().getApplicationName());
-				}
-				
-				//VALIDATE INITIAL FILTER
-				if(payload.getRequest().getOperationCode().equalsIgnoreCase(ruleTemp.getRuleDetail().getInitialFilter().getOperationCode())
-						&& payload.getRequest().getRejectionCode().equalsIgnoreCase(ruleTemp.getRuleDetail().getInitialFilter().getRejectionCode())) {
-						
-					logger.info("Initial filter 1 validated");
-					
-					//GET TIMEOUT OF THE RULE
-					if(ruleTemp.getRuleDetail().getTimeout() != null) {
-						logger.info("Timeout configured in the rule "+ ruleTemp.getId() + ": " + TIMEOUT + " ms");
-						TIMEOUT = ruleTemp.getRuleDetail().getTimeout();
-					}else {
-						logger.info("Not found timeout property in the Rule No." + ruleTemp.getId() + ": " + ruleTemp.getRuleDetail().getTimeout());
-						logger.info("Defaul Timeout configured in the Rule No." + ruleTemp.getId() + ": " + TIMEOUT  + " ms");
-					}
-					
-					//VALIDATE DMN TABLE
-					if(!ruleTemp.getRuleDetail().getDmn().getTable().equals("")
-							&& !ruleTemp.getRuleDetail().getDmn().getSourceObject().equals("")
-							&& !ruleTemp.getRuleDetail().getDmn().getInputColumn().equals("")
-							&& !ruleTemp.getRuleDetail().getDmn().getOutputColum().equals("")
-							&& !ruleTemp.getRuleDetail().getDmn().getRejectTx().equals("")) {
-						
-						//VALIDATE LOGICA ABOUT DMN
-						Payload payloadTemp = validateDMN(ruleTemp, payload, json);
-												
-						if(payloadTemp == null) {//IF VALUE OF THE DMN OUPUT COLUMN IS EQUAL REJECT-TX VALUE
-							continue;
-						}else {
-							payload = payloadTemp;
-						}
-						
-					}else{
-						logger.info("At least one property don't have a value. Verify the DMN properties in the rule");
-						continue;
-					}//END if(!ruleTemp.getRuleDetail().getDmn().getTable().equals("")) {
-										
-					//INVOKE THE OTHER SERVICE
-					if(!ruleTemp.getRuleDetail().getPostHttpRest().equals("")) {
-						logger.info("Invoking Post Http Rest...");
-						new ResponseEntity<String>(callService(ruleTemp.getRuleDetail().getPostHttpRest(), payload), HttpStatus.OK);
-					}else {
-						logger.info("Not found PostHttpRest property in the rule");
-						continue;
-					}
-					
-					continue;
-					
-				}else{
-					logger.info("Initial filter 1 no validated");
-				}//END if(_request.getOperationCode().equalsIgnoreCase(ruleTemp.get("operationCode"))
-				
-				if(payload.getRequest().getOperationCode().equalsIgnoreCase(ruleTemp.getRuleDetail().getInitialFilter().getOperationCode())
-						&& payload.getRequest().getWalletId().equalsIgnoreCase(ruleTemp.getRuleDetail().getInitialFilter().getWalletId())
-						&& payload.getRequest().getRejectionCode().equalsIgnoreCase(ruleTemp.getRuleDetail().getInitialFilter().getRejectionCode())) {
-					
-					logger.info("Initial filter 2 validated");
-					
-					//GET TIMEOUT OF THE RULE
-					if(ruleTemp.getRuleDetail().getTimeout() != null) {
-						logger.info("Timeout configured in the rule "+ ruleTemp.getId() + ": " + TIMEOUT + " ms");
-						TIMEOUT = ruleTemp.getRuleDetail().getTimeout();
-					}else {
-						logger.info("Not found timeout property in the Rule No." + ruleTemp.getId() + ": " + ruleTemp.getRuleDetail().getTimeout());
-						logger.info("Defaul Timeout configured in the Rule No." + ruleTemp.getId() + ": " + TIMEOUT  + " ms");
-					}
-					
-					//VALIDATE DMN TABLE
-					if(!ruleTemp.getRuleDetail().getDmn().getTable().equals("")
-							&& !ruleTemp.getRuleDetail().getDmn().getSourceObject().equals("")
-							&& !ruleTemp.getRuleDetail().getDmn().getInputColumn().equals("")
-							&& !ruleTemp.getRuleDetail().getDmn().getOutputColum().equals("")
-							&& !ruleTemp.getRuleDetail().getDmn().getRejectTx().equals("")) {
-						
-						//VALIDATE LOGICA ABOUT DMN
-						Payload payloadTemp = validateDMN(ruleTemp, payload, json);
-						
-						if(payloadTemp == null) {//IF VALUE OF THE DMN OUPUT COLUMN IS EQUAL REJECT-TX VALUE
-							continue;
-						}else {
-							payload = payloadTemp;
-						}
-					}else{
-						logger.info("At least one property don't have a value. Verify the DMN properties in the rule");
-						continue;
-					}//END if(!ruleTemp.getRuleDetail().getDmn().getTable().equals("")) {
-					
-					//INVOKE THE OTHER SERVICE
-					if(!ruleTemp.getRuleDetail().getPostHttpRest().equals("")) {
-						logger.info("Invoking Post Http Rest...");
-						new ResponseEntity<String>(callService(ruleTemp.getRuleDetail().getPostHttpRest(), payload), HttpStatus.OK);
-					}else {
-						logger.info("Not found PostHttpRest property in the rule");
-						continue;
-					}
-					
-					continue;
-				}else {
-					logger.info("Initial filter 2 no validated");
-				}//END if(payload.getRequest().getOperationCode().equalsIgnoreCase(ruleTemp.getRuleDetail().getInitialFilter().getOperationCode())
-				
-			}//END for(int i=0; i < ruleList.size(); i++) {
-			
-			
-    }
-	
 	/**
-	 * @param ruleTemp
-	 * @param _payload
-	 * @param _json
+	 * 
+	 * @param json
 	 * @return
-	 * @throws JsonProcessingException
+	 * @throws Exception
 	 */
-	public Payload validateDMN(Rule ruleTemp, Payload _payload, ObjectNode _json) throws JsonProcessingException {
-						
-		//GET THE VALUE OF THE SOURCE OBJECT PROPERTY
-		//IF THE PROPERTY DONT EXIST IN THE PLAYLOAD RETURN A EXCEPTION
-		String valueSourceObject = _payload.getValueSourceObject(ruleTemp.getRuleDetail().getDmn().getSourceObject(), _json.toString());
-		
-		//GET INPUT JSON TO SEND DMN
-		String dmnInputJson = _payload.getDmnInputJson(ruleTemp.getRuleDetail().getDmn().getInputColumn(), valueSourceObject);
-		
-		//CALL DMN AND GET RESPONSE FROM DMN
-		String dmnResponse = callDMN(ruleTemp.getRuleDetail().getDmn().getTable(), dmnInputJson);
-		
-		if(dmnResponse != null) {//IF GET A RESPONSE FROM THE DMN
-			
-			//GET VALUE OF THE DMN OUTPUT COLUMN 
-			String dmnOutputColumnValue = getDmnOutputColumnValue(dmnResponse,ruleTemp.getRuleDetail().getDmn().getOutputColum());
-			
-			
-			//IF THE VALUE OF THE DMN OUTPUT COLUMN IS EQUAL THE REJECT TX
-			if(dmnOutputColumnValue.equals(ruleTemp.getRuleDetail().getDmn().getRejectTx())) {
-				logger.info("The DMN's output value ("+dmnOutputColumnValue+") is equal a RejectTx ("+ruleTemp.getRuleDetail().getDmn().getRejectTx()+")");
-				logger.info("Exit of the rule and continue with the next rule \n");
-				return null;
-			}
-			
-			//SET THE ADDITIONAL INFORMATION
-			AdditionalInformation additionalInformation = new AdditionalInformation();
-			additionalInformation.setServiceName(ruleTemp.getRuleDetail().getApplicationName());
-			
-			ObjectMapper mapper = new ObjectMapper();
-			DMNResponse dmnResponse1 = mapper.readValue(dmnResponse,DMNResponse.class);
-			List<DMNValues> list = dmnResponse1.getResult();
-			DMNValues dmnValues = (DMNValues)list.get(0);//THE INDEX IS ALLWAYS 0
-			additionalInformation.setDmnValues(dmnValues);
-			
-			//ADD THE ADDITIONAL INFORMATION TO THE ORIGINAL PAYLOAD
-			_payload.setAdditionalInformation(additionalInformation);
-			logger.info("Additional information added to the payload");
-			
-		}else{
-			
-			logger.info("Not get response from DMN");
-		}//END if(dmnResponse != null) {
-			
-		return _payload;
-	}
-	
-	/**
-	 * @param table
-	 * @param jsonDMNInput
-	 * @return
-	 * @throws JsonProcessingException
-	 */
-	public String callDMN(String table, String jsonDMNInput) throws JsonProcessingException {
-		
-		Dmn dmnTable = new Dmn();
-		
-		String DMNUri = dmnTable.getUri(table);
-	    logger.info("DMN invoked: " + DMNUri);
-	    logger.info("DMN Input: " + jsonDMNInput);
-		
-	    //RestTemplate restTemplate = new RestTemplate(getClientHttpRequestFactory());
-	    RestTemplate restTemplate = new RestTemplateBuilder()
-	            .setConnectTimeout(Duration.ofMillis(TIMEOUT))
-	            .build();
-	    
-	    HttpHeaders headers = new HttpHeaders();
-	    headers.setContentType(MediaType.APPLICATION_JSON);
-	    
-	    HttpEntity<String> request = new HttpEntity<String>(jsonDMNInput, headers);
-	    	    
-	    String result = restTemplate.postForObject(DMNUri, request, String.class);
-	    
-	    logger.info("DMN Response: " + result);
-	    
-	    return result;
-	    
-	}
-	
-	/**
-	 * @param dmnResponse
-	 * @param dmnOutputColumn
-	 * @return
-	 */
-	public String getDmnOutputColumnValue(String dmnResponse, String dmnOutputColumn) {
-		DocumentContext context = JsonPath.parse(dmnResponse);
-		String dmnOutputColumnValue  = context.read("$.result[0]."+dmnOutputColumn, String.class); //THE INDEX IS ALWAYS 0
-		return dmnOutputColumnValue;
-	}
-	
-	/**
-	 * @param httpRestUrl
-	 * @param payload
-	 * @return
-	 * @throws JsonProcessingException
-	 */
-	public String callService(String httpRestUrl, Payload payload) throws JsonProcessingException {
-		
-		String uri = httpRestUrl;
-	    
-	    logger.info("Http Rest Url invoked: " + httpRestUrl);
-		
-	    ObjectMapper mapperPayload = new ObjectMapper();
-	    String jsonString = mapperPayload.writeValueAsString(payload);
-	    
-	    logger.info("Payload sent: " + jsonString);
-	    
-	    //RestTemplate restTemplate = new RestTemplate();
-	    RestTemplate restTemplate = new RestTemplateBuilder()
-	            .setConnectTimeout(Duration.ofMillis(TIMEOUT))
-	            .build();
-	    HttpHeaders headers = new HttpHeaders();
-	    headers.setContentType(MediaType.APPLICATION_JSON);
-	    
-	    HttpEntity<String> request = new HttpEntity<String>(jsonString, headers);
-	    	    
-	    String result = restTemplate.postForObject(uri, request, String.class);
-	    logger.info("Response: " + result + "\n");
-	    
-	    return result;
-	    
-	}
-	
 	@Async(value="taskExecutor")
-    public CompletableFuture<String> validate2(ObjectNode json) throws Exception {
+    public CompletableFuture<String> validate(ObjectNode json) throws Exception {
 		Long start = System.currentTimeMillis();
 		
-		logger.info("validate2: {}", Thread.currentThread().getName());
+		//logger.debug("Thread of validate method: {}", Thread.currentThread().getName());
 				
 		//SET LOG INITIAL INFORMATION
 		SetLogData logData = new SetLogData();
@@ -322,28 +72,10 @@ public class RuleService {
 	
 		try {
 			
-			logger.info("Timeout default: {} ms", TIMEOUT);
+			logger.debug("Timeout default: {} ms", TIMEOUT);
 			logger.info("TransactionId ID: {}", transactionId);
 	        logger.info("Payload received: {}", json.toString());
 	        
-			//LOAD RULES CONFIGURED LIKE ENVIROMENT VARIABLES
-			/*List<Rule> ruleList = new  ArrayList<>();
-			int numRules = applicationProperties.getNumRules();
-			logger.info("Total rules configured: {}", numRules);
-			
-			for(int i = 1; i <= numRules; i++) {
-				
-				//GET RULE FROM ENVIROMENT VARIABLE AND CONVERTS IN JAVA OBJECT
-				ObjectMapper mapperRule = new ObjectMapper();
-				Rule rule = mapperRule.readValue(applicationProperties.get(String.valueOf(i)), Rule.class);
-				
-				//VALLIDATE THE RULE'S STRUCTURE
-				validateRule(rule);
-				
-				logger.info("Rule No.{}: {}", i, applicationProperties.get(String.valueOf(i)));
-				ruleList.add(rule);
-			}*/
-			
 			for(int i=0; i < ruleList.size(); i++) {
 				Rule ruleTemp = (Rule)ruleList.get(i);
 				
@@ -354,7 +86,7 @@ public class RuleService {
 				//mapperPayload.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 				Payload payload = mapperPayload.readValue(json.toString(),Payload.class);
 				
-				logger.info("MSISDN...", payload.getRequest().getMsisdn());
+				//logger.info("MSISDN...", payload.getRequest().getMsisdn());
 				
 				if(ruleTemp.getRuleDetail().getApplicationName() == null) {
 					logger.info("Not found applicationName property in the Rule No.{} : {}", ruleTemp.getId(), ruleTemp.getRuleDetail().getApplicationName());
@@ -365,17 +97,17 @@ public class RuleService {
 				if(payload.getRequest().getOperationCode().equalsIgnoreCase(ruleTemp.getRuleDetail().getInitialFilter().getOperationCode())
 						&& payload.getRequest().getRejectionCode().equalsIgnoreCase(ruleTemp.getRuleDetail().getInitialFilter().getRejectionCode())) {
 						
-					logger.info("Initial filter 1 validated");
+					logger.debug("Initial filter 1 validated");
 					
 					//GET TIMEOUT OF THE RULE
 					if(ruleTemp.getRuleDetail().getTimeout() != null) {
-						logger.info("Timeout configured in the Rule No.{}: {} ms", ruleTemp.getId(), TIMEOUT);
+						logger.debug("Timeout configured in the Rule No.{}: {} ms", ruleTemp.getId(), TIMEOUT);
 						TIMEOUT = ruleTemp.getRuleDetail().getTimeout();
 					}else {
 						logger.info("Not found timeout property in the Rule No.{}: {}", ruleTemp.getId(), ruleTemp.getRuleDetail().getTimeout());
 						logger.info("Defaul Timeout configured in the Rule No.{}: {}", ruleTemp.getId(), TIMEOUT);
 					}
-					logger.info("Timeout set in the Rule No.{}: {} ms",ruleTemp.getId(),TIMEOUT);
+					logger.debug("Timeout set in the Rule No.{}: {} ms",ruleTemp.getId(),TIMEOUT);
 					
 					//VALIDATE DMN TABLE
 					if(!ruleTemp.getRuleDetail().getDmn().getTable().equals("")
@@ -410,18 +142,18 @@ public class RuleService {
 					continue;
 					
 				}else{
-					logger.info("Initial filter 1 no validated");
+					logger.debug("Initial filter 1 no validated");
 				}//END if(_request.getOperationCode().equalsIgnoreCase(ruleTemp.get("operationCode"))
 				
 				if(payload.getRequest().getOperationCode().equalsIgnoreCase(ruleTemp.getRuleDetail().getInitialFilter().getOperationCode())
 						&& payload.getRequest().getWalletId().equalsIgnoreCase(ruleTemp.getRuleDetail().getInitialFilter().getWalletId())
 						&& payload.getRequest().getRejectionCode().equalsIgnoreCase(ruleTemp.getRuleDetail().getInitialFilter().getRejectionCode())) {
 					
-					logger.info("Initial filter 2 validated");
+					logger.debug("Initial filter 2 validated");
 					
 					//GET TIMEOUT OF THE RULE
 					if(ruleTemp.getRuleDetail().getTimeout() != null) {
-						logger.info("Timeout configured in the Rule No.{}: {} ms", ruleTemp.getId(), TIMEOUT);
+						logger.debug("Timeout configured in the Rule No.{}: {} ms", ruleTemp.getId(), TIMEOUT);
 						TIMEOUT = ruleTemp.getRuleDetail().getTimeout();
 					}else {
 						logger.info("Not found timeout property in the Rule No.{}: {}", ruleTemp.getId(), ruleTemp.getRuleDetail().getTimeout());
@@ -450,7 +182,7 @@ public class RuleService {
 					
 					//INVOKE THE OTHER SERVICE
 					if(!ruleTemp.getRuleDetail().getPostHttpRest().equals("")) {
-						logger.info("Invoking Post Http Rest...");
+						logger.debug("Invoking Post Http Rest...");
 						new ResponseEntity<String>(callService(ruleTemp.getRuleDetail().getPostHttpRest(), payload), HttpStatus.OK);
 					}else {
 						logger.info("Not found PostHttpRest property in the Rule");
@@ -459,12 +191,12 @@ public class RuleService {
 					
 					continue;
 				}else {
-					logger.info("Initial filter 2 no validated");
+					logger.debug("Initial filter 2 no validated");
 				}//END if(payload.getRequest().getOperationCode().equalsIgnoreCase(ruleTemp.getRuleDetail().getInitialFilter().getOperationCode())
 				
 			}//END for(int i=0; i < ruleList.size(); i++) {
 			
-			ResponseEntity<String> response = new ResponseEntity<>("{\"instanceID\":\""+transactionId+"\",\"code\":"+HTTP_SATUS_OK+"}", HttpStatus.OK);
+			ResponseEntity<String> response = new ResponseEntity<String>("{\"instanceID\":\""+transactionId+"\",\"code\":"+HTTP_SATUS_OK+"}", HttpStatus.OK);
 
 			HttpStatus headers = response.getStatusCode();
 	        Integer _statusCode = headers.value();
@@ -484,7 +216,7 @@ public class RuleService {
 	        }
 	        
 	        Long end = System.currentTimeMillis();
-	        logger.info("Total time: {}", (end-start) );
+	        logger.debug("Total time: {}", (end-start) );
 	        GsLog.setLog(transactionId, "timeTaken", (end-start));
 			GsLog.sendLogs((String)transactionId);
 	       			
@@ -499,6 +231,146 @@ public class RuleService {
 		
 	}
 	
+	/**
+	 * 
+	 * @param ruleTemp
+	 * @param _payload
+	 * @param _json
+	 * @return
+	 * @throws JsonProcessingException
+	 */
+	public Payload validateDMN(Rule ruleTemp, Payload _payload, ObjectNode _json) throws JsonProcessingException {
+						
+		//GET THE VALUE OF THE SOURCE OBJECT PROPERTY
+		//IF THE PROPERTY DONT EXIST IN THE PLAYLOAD RETURN A EXCEPTION
+		String valueSourceObject = _payload.getValueSourceObject(ruleTemp.getRuleDetail().getDmn().getSourceObject(), _json.toString());
+		
+		//GET INPUT JSON TO SEND DMN
+		String dmnInputJson = _payload.getDmnInputJson(ruleTemp.getRuleDetail().getDmn().getInputColumn(), valueSourceObject);
+		
+		//CALL DMN AND GET RESPONSE FROM DMN
+		String dmnResponse = callDMN(ruleTemp.getRuleDetail().getDmn().getTable(), dmnInputJson);
+		
+		if(dmnResponse != null) {//IF GET A RESPONSE FROM THE DMN
+			
+			//GET VALUE OF THE DMN OUTPUT COLUMN 
+			String dmnOutputColumnValue = getDmnOutputColumnValue(dmnResponse,ruleTemp.getRuleDetail().getDmn().getOutputColum());
+			
+			
+			//IF THE VALUE OF THE DMN OUTPUT COLUMN IS EQUAL THE REJECT TX
+			if(dmnOutputColumnValue.equals(ruleTemp.getRuleDetail().getDmn().getRejectTx())) {
+				logger.debug("The DMN's output value ("+dmnOutputColumnValue+") is equal a RejectTx ("+ruleTemp.getRuleDetail().getDmn().getRejectTx()+")");
+				logger.debug("Exit of the rule and continue with the next rule \n");
+				return null;
+			}
+			
+			//SET THE ADDITIONAL INFORMATION
+			AdditionalInformation additionalInformation = new AdditionalInformation();
+			additionalInformation.setServiceName(ruleTemp.getRuleDetail().getApplicationName());
+			
+			ObjectMapper mapper = new ObjectMapper();
+			DMNResponse dmnResponse1 = mapper.readValue(dmnResponse,DMNResponse.class);
+			List<DMNValues> list = dmnResponse1.getResult();
+			DMNValues dmnValues = (DMNValues)list.get(0);//THE INDEX IS ALLWAYS 0
+			additionalInformation.setDmnValues(dmnValues);
+			
+			//ADD THE ADDITIONAL INFORMATION TO THE ORIGINAL PAYLOAD
+			_payload.setAdditionalInformation(additionalInformation);
+			logger.debug("Additional information added to the payload");
+			
+		}else{
+			
+			logger.info("Not get response from DMN");
+		}//END if(dmnResponse != null) {
+			
+		return _payload;
+	}
+	
+	/**
+	 * 
+	 * @param table
+	 * @param jsonDMNInput
+	 * @return
+	 * @throws JsonProcessingException
+	 */
+	public String callDMN(String table, String jsonDMNInput) throws JsonProcessingException {
+		
+		Dmn dmnTable = new Dmn();
+		
+		String DMNUri = dmnTable.getUri(table);
+	    logger.debug("DMN invoked: " + DMNUri);
+	    logger.debug("DMN Input: " + jsonDMNInput);
+		
+	    //RestTemplate restTemplate = new RestTemplate(getClientHttpRequestFactory());
+	    RestTemplate restTemplate = new RestTemplateBuilder()
+	            .setConnectTimeout(Duration.ofMillis(TIMEOUT))
+	            .build();
+	    
+	    HttpHeaders headers = new HttpHeaders();
+	    headers.setContentType(MediaType.APPLICATION_JSON);
+	    
+	    HttpEntity<String> request = new HttpEntity<String>(jsonDMNInput, headers);
+	    	    
+	    String result = restTemplate.postForObject(DMNUri, request, String.class);
+	    
+	    logger.debug("DMN Response: " + result);
+	    
+	    return result;
+	    
+	}
+	
+	/**
+	 * 
+	 * @param dmnResponse
+	 * @param dmnOutputColumn
+	 * @return
+	 */
+	public String getDmnOutputColumnValue(String dmnResponse, String dmnOutputColumn) {
+		DocumentContext context = JsonPath.parse(dmnResponse);
+		String dmnOutputColumnValue  = context.read("$.result[0]."+dmnOutputColumn, String.class); //THE INDEX IS ALWAYS 0
+		return dmnOutputColumnValue;
+	}
+	
+	/**
+	 * 
+	 * @param httpRestUrl
+	 * @param payload
+	 * @return
+	 * @throws JsonProcessingException
+	 */
+	public String callService(String httpRestUrl, Payload payload) throws JsonProcessingException {
+		
+		String uri = httpRestUrl;
+	    
+	    logger.debug("Http Rest Url invoked: {}", httpRestUrl);
+		
+	    ObjectMapper mapperPayload = new ObjectMapper();
+	    String jsonString = mapperPayload.writeValueAsString(payload);
+	    
+	    logger.info("Payload sent to Http Rest Url: {}", jsonString);
+	    
+	    //RestTemplate restTemplate = new RestTemplate();
+	    RestTemplate restTemplate = new RestTemplateBuilder()
+	            .setConnectTimeout(Duration.ofMillis(TIMEOUT))
+	            .build();
+	    HttpHeaders headers = new HttpHeaders();
+	    headers.setContentType(MediaType.APPLICATION_JSON);
+	    
+	    HttpEntity<String> request = new HttpEntity<String>(jsonString, headers);
+	    	    
+	    String result = restTemplate.postForObject(uri, request, String.class);
+	    logger.info("Http Rest Url response: {}", result);
+	    
+	    return result;
+	    
+	}
+	
+	/**
+	 * 
+	 * @param rule
+	 * @return
+	 * @throws Exception
+	 */
 	public boolean validateRule(Rule rule) throws Exception {
 		String idRule = rule.getId();
 		if(rule.validateRule(idRule)){
@@ -514,10 +386,18 @@ public class RuleService {
 		return false;
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	public List<Rule> getRuleList() {
 		return ruleList;
 	}
 
+	/**
+	 * 
+	 * @param ruleList
+	 */
 	public void setRuleList(List<Rule> ruleList) {
 		this.ruleList = ruleList;
 	}

@@ -5,3 +5,25 @@ Introduction to JsonPath - https://www.baeldung.com/guide-to-jayway-jsonpath
 Spring RestTemplate Timeout - https://hellokoding.com/spring-resttemplate-timeout/
 Configuring Timeouts with Spring RestTemplate - https://howtodoinjava.com/spring-boot2/resttemplate/resttemplate-timeout-example/
 Mongo tries to connect automatically to port 27017(localhost) - https://stackoverflow.com/questions/34414367/mongo-tries-to-connect-automatically-to-port-27017localhost
+Problems sending multiple objects through POST and SPRING-MVC - https://stackoverflow.com/questions/19654120/problems-sending-multiple-objects-through-post-and-spring-mvc
+Cómo hacer pruebas de rendimiento a un servicio web con Apache JMeter - https://www.youtube.com/watch?v=KpqeqlA7yS0
+Common Application Properties - https://docs.spring.io/spring-boot/docs/current/reference/html/application-properties.html
+How to Configure Spring Boot Tomcat - https://www.baeldung.com/spring-boot-configure-tomcat
+Aprende a instalar Docker en Windows - https://www.youtube.com/watch?v=9awV3Y-rpI0
+Multi-Threading in Spring Boot using CompletableFuture | @Async | JavaTechie - https://www.youtube.com/watch?v=3rJBLFA95Io
+Multi-Threading in Spring Boot Using CompletableFuture - https://dzone.com/articles/multi-threading-in-spring-boot-using-completablefu
+Maven + Spring Boot: Found multiple occurrences of org.json.JSONObject on the class path: - https://stackoverflow.com/questions/52980064/maven-spring-boot-found-multiple-occurrences-of-org-json-jsonobject-on-the-cl
+Maven - Failed to execute goal org.apache.maven.plugins:maven-clean-plugin:2.4.1:clean - https://stackoverflow.com/questions/20442862/maven-failed-to-execute-goal-org-apache-maven-pluginsmaven-clean-plugin2-4-1
+Docker Build: A Beginner’s Guide to Building Docker Images - https://stackify.com/docker-build-a-beginners-guide-to-building-docker-images/
+docker image rm - https://docs.docker.com/engine/reference/commandline/image_rm/
+Contenedores, imágenes y registros de Docker - https://docs.microsoft.com/es-es/dotnet/architecture/microservices/container-docker-introduction/docker-containers-images-registries
+Imagenes Docker - https://eltallerdelbit.com/imagenes-docker/
+Entendiendo Docker. Conceptos básicos: Imágenes, Contenedores, Links… - https://www.javiergarzas.com/2015/07/entendiendo-docker.html
+
+
+
+
+
+
+
+

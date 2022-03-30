@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.tecnotree</groupId>
-	<artifactId>NotificacionAlternateService</artifactId>
+	<artifactId>ExternalNotificationService</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>NotificacionAlternateService</name>
 	<description>Demo project for Spring Boot</description>
@@ -52,6 +52,12 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
+			<exclusions>
+		        <exclusion>
+		            <groupId>com.vaadin.external.google</groupId>
+		            <artifactId>android-json</artifactId>
+		        </exclusion>
+		    </exclusions>
 		</dependency>
 		
 		<dependency>

@@ -13,7 +13,7 @@ public class ApplicationProperties {
 	@Value("${service.servicename}")
 	private String serviceName;
 	
-	@Value("${logging.level.com.tecnotree.rest}")
+	@Value("${logging.level.com.tecnotree}")
 	private String logLevel;
 	
 	@Value("${service.timeout}")
@@ -22,8 +22,17 @@ public class ApplicationProperties {
 	@Autowired
 	private Environment env;
 	
-	@Value("${numRules}") //FROM PROPERTIES FILE
+	@Value("${service.numRules}") //FROM PROPERTIES FILE
 	private int numRules;
+	
+	@Value("${executor.corePoolSize}")
+	private int corePoolSize;
+	
+	@Value("${executor.queueCapacity}")
+	private int queueCapacity;
+	
+	@Value("${executor.maxPoolSize}")
+	private int maxPoolSize;
 	
 	public String get(String numRule) {
 		return env.getProperty("RULE." + numRule);
@@ -68,7 +77,29 @@ public class ApplicationProperties {
 	public void setLogLevel(String logLevel) {
 		this.logLevel = logLevel;
 	}
-	
-	
+
+	public int getCorePoolSize() {
+		return corePoolSize;
+	}
+
+	public void setCorePoolSize(int corePoolSize) {
+		this.corePoolSize = corePoolSize;
+	}
+
+	public int getQueueCapacity() {
+		return queueCapacity;
+	}
+
+	public void setQueueCapacity(int queueCapacity) {
+		this.queueCapacity = queueCapacity;
+	}
+
+	public int getMaxPoolSize() {
+		return maxPoolSize;
+	}
+
+	public void setMaxPoolSize(int maxPoolSize) {
+		this.maxPoolSize = maxPoolSize;
+	}
 	
 }

@@ -39,7 +39,7 @@ public class ExternalNotificationServiceApplication implements CommandLineRunner
 	   
 	    try {
 		    //LOAD RULES CONFIGURED LIKE ENVIROMENT VARIABLES
-			List<Rule> ruleList = new  ArrayList<>();
+			List<Rule> ruleList = new  ArrayList<Rule>();
 			numRules = applicationProperties.getNumRules();
 			logger.info("Total Rules configured: {}", numRules);
 			
