@@ -19,8 +19,10 @@ docker image rm - https://docs.docker.com/engine/reference/commandline/image_rm/
 Contenedores, imágenes y registros de Docker - https://docs.microsoft.com/es-es/dotnet/architecture/microservices/container-docker-introduction/docker-containers-images-registries
 Imagenes Docker - https://eltallerdelbit.com/imagenes-docker/
 Entendiendo Docker. Conceptos básicos: Imágenes, Contenedores, Links… - https://www.javiergarzas.com/2015/07/entendiendo-docker.html
-
-
+Docker Container Tutorial #11 Environment Variables - https://www.youtube.com/watch?v=DeeEzir3rjY
+¿Cómo dockerizar una aplicación creada en Spring Boot? | 4SoftwareDevelopers - https://www.youtube.com/watch?v=--zEFJ6g4lo
+**COMO DOCKERIZAR UNA APP Spring Boot Suite EN 5 MIN** - https://www.youtube.com/watch?v=BIutm8Q8YFg
+Dockerizing Spring Boot Application | Spring Boot Docker Tutorial | Docker Image - https://www.youtube.com/watch?v=RVIbMuNs1aw
 
 
 
