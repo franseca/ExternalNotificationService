@@ -3,7 +3,7 @@ package com.tecnotree.node.util;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Predicate;
 import com.tecnotree.node.action.db.exception.DataProcessingException;
-import com.tecnotree.node.logger.GsLog;
+import com.tecnotree.node.logger.EnLog;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import net.sf.json.JSONObject;
@@ -31,7 +31,7 @@ public class SetLogData {
       }
 
       logData.put("request", json);
-      GsLog.setRootKey(transactionId, logData);
+      EnLog.setRootKey(transactionId, logData);
       return transactionId;
    }
 
@@ -47,9 +47,9 @@ public class SetLogData {
          statusCode = code;
       }
 
-      GsLog.setLog(instanceId, "response", response);
-      GsLog.setLog(instanceId, "statusCode", statusCode);
-      GsLog.setLog(instanceId, "timeTaken", System.currentTimeMillis() - startTime);
-      GsLog.sendLogs(instanceId);
+      EnLog.setLog(instanceId, "response", response);
+      EnLog.setLog(instanceId, "statusCode", statusCode);
+      EnLog.setLog(instanceId, "timeTaken", System.currentTimeMillis() - startTime);
+      EnLog.sendLogs(instanceId);
    }
 }

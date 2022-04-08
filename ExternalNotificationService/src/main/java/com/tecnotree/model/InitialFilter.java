@@ -38,11 +38,11 @@ public class InitialFilter {
 			throw new Exception("Not found a value in the rejectionCode property in the rule No." + rule);
 		
 		
-		if(this.walletId == null) {
+		/*if(this.walletId == null) {
 			throw new Exception("Not found walletId property in the rule No." + rule);
 		}else if(this.walletId.equals(""))
 			throw new Exception("Not found a value in the walletId property in the rule No." + rule);
-		
+		*/
 		
 		return true;
 		

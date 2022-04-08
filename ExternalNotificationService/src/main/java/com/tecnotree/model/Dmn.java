@@ -51,7 +51,7 @@ public class Dmn {
 	}
 	
 	public boolean validateRule(String rule) throws Exception {
-		if(this.table == null) {
+		/*if(this.table == null) {
 			throw new Exception("Not found table property in the rule No." + rule);
 		}else if(this.table.equals(""))
 			throw new Exception("Not found a value in the table property in the rule No." + rule);
@@ -75,7 +75,7 @@ public class Dmn {
 			throw new Exception("Not found rejectTx property in the rule No." + rule);
 		}else if(this.rejectTx.equals(""))
 			throw new Exception("Not found a value in the rejectTx property in the rule No." + rule);
-		
+		*/
 		return true;
 	}
 }

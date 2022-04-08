@@ -34,8 +34,23 @@ public class ApplicationProperties {
 	@Value("${executor.maxPoolSize}")
 	private int maxPoolSize;
 	
+	@Value("${service.mongodb.user}")
+	private String mongodbUser;
+	
+	@Value("${service.mongodb.password}")
+	private String mongodbPassword;
+	
+	@Value("${service.mongodb.host}")
+	private String mongodbHost;
+	
+	@Value("${service.mongodb.port}")
+	private String mongodbPort;
+	
+	@Value("${service.mongodb.database}")
+	private String mongodbDatabase;
+			
 	public String get(String numRule) {
-		return env.getProperty("RULE." + numRule);
+		return env.getProperty("RULE_" + numRule);
 	}
 	
 	public int getNumRules() {
@@ -101,5 +116,46 @@ public class ApplicationProperties {
 	public void setMaxPoolSize(int maxPoolSize) {
 		this.maxPoolSize = maxPoolSize;
 	}
+
+	public String getMongodbUser() {
+		return mongodbUser;
+	}
+
+	public void setMongodbUser(String mongodbUser) {
+		this.mongodbUser = mongodbUser;
+	}
+
+	public String getMongodbPassword() {
+		return mongodbPassword;
+	}
+
+	public void setMongodbPassword(String mongodbPassword) {
+		this.mongodbPassword = mongodbPassword;
+	}
+
+	public String getMongodbHost() {
+		return mongodbHost;
+	}
+
+	public void setMongodbHost(String mongodbHost) {
+		this.mongodbHost = mongodbHost;
+	}
+
+	public String getMongodbPort() {
+		return mongodbPort;
+	}
+
+	public void setMongodbPort(String mongodbPort) {
+		this.mongodbPort = mongodbPort;
+	}
+
+	public String getMongodbDatabase() {
+		return mongodbDatabase;
+	}
+
+	public void setMongodbDatabase(String mongodbDatabase) {
+		this.mongodbDatabase = mongodbDatabase;
+	}
+
 	
 }

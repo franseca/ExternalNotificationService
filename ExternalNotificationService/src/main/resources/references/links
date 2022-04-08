@@ -23,8 +23,14 @@ Docker Container Tutorial #11 Environment Variables - https://www.youtube.com/wa
 ¿Cómo dockerizar una aplicación creada en Spring Boot? | 4SoftwareDevelopers - https://www.youtube.com/watch?v=--zEFJ6g4lo
 **COMO DOCKERIZAR UNA APP Spring Boot Suite EN 5 MIN** - https://www.youtube.com/watch?v=BIutm8Q8YFg
 Dockerizing Spring Boot Application | Spring Boot Docker Tutorial | Docker Image - https://www.youtube.com/watch?v=RVIbMuNs1aw
-
-
+Camunda Dmn Engine in a Java Main Method - https://github.com/camunda/camunda-bpm-examples/blob/master/dmn-engine/dmn-engine-java-main-method/README.md
+https://github.com/camunda/camunda-bpm-examples/blob/master/dmn-engine/dmn-engine-java-main-method/src/main/resources/org/camunda/bpm/example/dish-decision.dmn11.xml
+https://github.com/camunda/camunda-bpm-examples/blob/master/dmn-engine/dmn-engine-java-main-method/src/main/java/org/camunda/bpm/example/DishDecider.java
+How to Convert Java Map to JSON - https://devqa.io/how-to-convert-java-map-to-json/
+*.dmn files unable to parse with old camunda version - https://forum.camunda.org/t/dmn-files-unable-to-parse-with-old-camunda-version/22163
+Read a Model - https://docs.camunda.org/manual/latest/user-guide/model-api/dmn-model-api/read-a-model/
+Evaluating Decisions using the DMN Engine API - https://docs.camunda.org/manual/7.16/user-guide/dmn-engine/evaluate-decisions/
+Do I need to explicitly close connection? - https://stackoverflow.com/questions/19938153/do-i-need-to-explicitly-close-connection
 
 
 

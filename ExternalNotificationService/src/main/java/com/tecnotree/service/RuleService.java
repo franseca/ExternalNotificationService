@@ -2,9 +2,17 @@ package com.tecnotree.service;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import org.camunda.bpm.dmn.engine.DmnDecision;
+import org.camunda.bpm.dmn.engine.DmnDecisionTableResult;
+import org.camunda.bpm.dmn.engine.DmnEngine;
+import org.camunda.bpm.dmn.engine.DmnEngineConfiguration;
+import org.camunda.bpm.engine.variable.VariableMap;
+import org.camunda.bpm.engine.variable.Variables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +32,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.tecnotree.config.ApplicationProperties;
-import com.tecnotree.config.AsyncConfiguration;
 import com.tecnotree.exception.ExceptionCode;
 import com.tecnotree.model.AdditionalInformation;
 import com.tecnotree.model.DMNResponse;
@@ -32,9 +39,9 @@ import com.tecnotree.model.DMNValues;
 import com.tecnotree.model.Dmn;
 import com.tecnotree.model.Payload;
 import com.tecnotree.model.Rule;
-import com.tecnotree.node.logger.GsLog;
+import com.tecnotree.node.logger.EnLog;
 import com.tecnotree.node.util.SetLogData;
-import com.tecnotree.output.util.GsCustomResponseMappingUtil;
+import com.tecnotree.output.util.EnCustomResponseMappingUtil;
 
 import net.sf.json.JSONObject;
 
@@ -46,13 +53,11 @@ public class RuleService {
 	private long TIMEOUT = 0; 
 	private String HTTP_SATUS_OK = "200";
 	private List<Rule> ruleList = new  ArrayList<Rule>();
+	private HashMap<String,DmnDecision> dmnMap = new HashMap<String,DmnDecision>();
 	
 	@Autowired
 	ApplicationProperties applicationProperties;
-	
-	@Autowired
-	AsyncConfiguration as;
-	
+		
 	/**
 	 * 
 	 * @param json
@@ -201,10 +206,10 @@ public class RuleService {
 			HttpStatus headers = response.getStatusCode();
 	        Integer _statusCode = headers.value();
 	        //GsLog.setLog(transactionId, "extCallStatus", _statusCode);
-	        GsLog.setLog(transactionId, "statusCode", _statusCode);
+	        EnLog.setLog(transactionId, "statusCode", _statusCode);
 	        
 	        String responseBody = (String)response.getBody();
-	        if (null != responseBody && !responseBody.isBlank()) {
+	        if (null != responseBody /*&& !responseBody.isBlank()*/) {
 	        	JSONObject _rest_response_obj = new JSONObject();
 	            _rest_response_obj = JSONObject.fromObject(responseBody);
 	            //boolean _string_res_check = _rest_response_obj.containsKey("*");
@@ -212,19 +217,19 @@ public class RuleService {
 	            //JSONObject outputJson = new JSONObject();
 	            //outputJson.put("responseMap", _rest_response_obj);
 	            //_rest_response_obj = outputJson;
-	            GsLog.setLog(transactionId, "response", _rest_response_obj);
+	            EnLog.setLog(transactionId, "response", _rest_response_obj);
 	        }
 	        
 	        Long end = System.currentTimeMillis();
 	        logger.debug("Total time: {}", (end-start) );
-	        GsLog.setLog(transactionId, "timeTaken", (end-start));
-			GsLog.sendLogs((String)transactionId);
+	        EnLog.setLog(transactionId, "timeTaken", (end-start));
+			EnLog.sendLogs((String)transactionId);
 	       			
 			return CompletableFuture.completedFuture("{\"instanceID\":\""+transactionId+"\",\"code\":"+HTTP_SATUS_OK+"}");
 			
 		} catch (Exception e) {
 			logger.info((String)e.getLocalizedMessage());
-			JSONObject errorRes = GsCustomResponseMappingUtil.proccessException(ExceptionCode.EXCEPTION_CODE, (String)e.getLocalizedMessage());
+			JSONObject errorRes = EnCustomResponseMappingUtil.proccessException(ExceptionCode.EXCEPTION_CODE, (String)e.getLocalizedMessage());
             logData.sendLogs(transactionId, ExceptionCode.EXCEPTION_CODE, errorRes, start);
             throw e;
 		}
@@ -249,14 +254,66 @@ public class RuleService {
 		String dmnInputJson = _payload.getDmnInputJson(ruleTemp.getRuleDetail().getDmn().getInputColumn(), valueSourceObject);
 		
 		//CALL DMN AND GET RESPONSE FROM DMN
-		String dmnResponse = callDMN(ruleTemp.getRuleDetail().getDmn().getTable(), dmnInputJson);
+		//String dmnResponse = callDMN(ruleTemp.getRuleDetail().getDmn().getTable(), dmnInputJson);
 		
-		if(dmnResponse != null) {//IF GET A RESPONSE FROM THE DMN
+		DmnEngine dmnEngine = DmnEngineConfiguration.createDefaultDmnEngineConfiguration().buildEngine();
+		DmnDecision decision = dmnMap.get(ruleTemp.getRuleDetail().getDmn().getTable());
+		VariableMap variables = Variables.putValue(ruleTemp.getRuleDetail().getDmn().getInputColumn(), valueSourceObject);
+				
+		DmnDecisionTableResult result = dmnEngine.evaluateDecisionTable(decision, variables);
+
+		if(result != null) {//IF GET A RESPONSE FROM THE DMN
 			
 			//GET VALUE OF THE DMN OUTPUT COLUMN 
-			String dmnOutputColumnValue = getDmnOutputColumnValue(dmnResponse,ruleTemp.getRuleDetail().getDmn().getOutputColum());
+			//String dmnOutputColumnValue = getDmnOutputColumnValue(dmnResponse,ruleTemp.getRuleDetail().getDmn().getOutputColum());
+			
+			List<Map<String,Object>> listResult = (List<Map<String,Object>>)result.getResultList();
+			String dmnOutputColumnValue = getDmnOutputColumnValue(listResult,ruleTemp.getRuleDetail().getDmn().getOutputColum());
+			logger.debug("dmnOutputColumnValue: {}", dmnOutputColumnValue);
+					
+			//IF THE VALUE OF THE DMN OUTPUT COLUMN IS EQUAL THE REJECT TX
+			if(dmnOutputColumnValue.equals(ruleTemp.getRuleDetail().getDmn().getRejectTx())) {
+				logger.debug("The DMN's output value ("+dmnOutputColumnValue+") is equal a RejectTx ("+ruleTemp.getRuleDetail().getDmn().getRejectTx()+")");
+				logger.debug("Exit of the rule and continue with the next rule \n");
+				return null;
+			}
+			
+			//SET THE ADDITIONAL INFORMATION
+			AdditionalInformation additionalInformation = new AdditionalInformation();
+			additionalInformation.setServiceName(ruleTemp.getRuleDetail().getApplicationName());
 			
 			
+			ObjectMapper mapper = new ObjectMapper();
+			Map<String,Object> result2 = (Map<String,Object>)listResult.get(0); 
+			String dmnResponse = mapper.writeValueAsString(result2);
+			/*DMNResponse dmnResponse1 = mapper.readValue(dmnResponse,DMNResponse.class);
+			List<DMNValues> list = dmnResponse1.getResult();
+			DMNValues dmnValues = (DMNValues)list.get(0);//THE INDEX IS ALLWAYS 0*/
+			DMNValues dmnValues = mapper.readValue(dmnResponse,DMNValues.class);
+			additionalInformation.setDmnValues(dmnValues);
+			
+			
+			//ADD THE ADDITIONAL INFORMATION TO THE ORIGINAL PAYLOAD
+			_payload.setAdditionalInformation(additionalInformation);
+			logger.debug("Additional information added to the payload");
+			
+		}else{
+			
+			logger.info("Not get response from DMN");
+		}//END if(dmnResponse != null) {
+		
+		//GET RESPONSE FROM MEMORY
+		//VALIDAR SI EL CAMPO A CONSULTAR DE LA RESPUESTA NO SE ENCUENTRA 
+		/*HashMap<String,Object> dmnMap = getDmnMap();
+		@SuppressWarnings("unchecked")
+		HashMap<String, Object> mapDmnResult = (HashMap<String, Object>)dmnMap.get(ruleTemp.getRuleDetail().getDmn().getTable());
+		@SuppressWarnings("unchecked")
+		ArrayList<LinkedHashMap<String,Object>> linkedHashMapArrayList = (ArrayList<LinkedHashMap<String,Object>>)mapDmnResult.get("result");
+		LinkedHashMap<String,Object> lhm = (LinkedHashMap<String,Object>)linkedHashMapArrayList.get(0);
+		String dmnOutputColumnValue = (String)lhm.get(ruleTemp.getRuleDetail().getDmn().getOutputColum());
+		System.out.println(dmnOutputColumnValue);
+			
+		if(dmnOutputColumnValue != null) {
 			//IF THE VALUE OF THE DMN OUTPUT COLUMN IS EQUAL THE REJECT TX
 			if(dmnOutputColumnValue.equals(ruleTemp.getRuleDetail().getDmn().getRejectTx())) {
 				logger.debug("The DMN's output value ("+dmnOutputColumnValue+") is equal a RejectTx ("+ruleTemp.getRuleDetail().getDmn().getRejectTx()+")");
@@ -281,8 +338,8 @@ public class RuleService {
 		}else{
 			
 			logger.info("Not get response from DMN");
-		}//END if(dmnResponse != null) {
-			
+		}//END if(dmnOutputColumnValue != null) {*/
+		
 		return _payload;
 	}
 	
@@ -328,6 +385,18 @@ public class RuleService {
 	public String getDmnOutputColumnValue(String dmnResponse, String dmnOutputColumn) {
 		DocumentContext context = JsonPath.parse(dmnResponse);
 		String dmnOutputColumnValue  = context.read("$.result[0]."+dmnOutputColumn, String.class); //THE INDEX IS ALWAYS 0
+		return dmnOutputColumnValue;
+	}
+	
+	/**
+	 * 
+	 * @param listResult
+	 * @param dmnOutputColumn
+	 * @return
+	 */
+	public String getDmnOutputColumnValue(List<Map<String,Object>> listResult, String dmnOutputColumn) {
+		Map<String,Object> result = (Map<String,Object>)listResult.get(0); //THE INDEX IS ALWAYS 0 
+		String dmnOutputColumnValue = (String) result.get(dmnOutputColumn);
 		return dmnOutputColumnValue;
 	}
 	
@@ -401,5 +470,22 @@ public class RuleService {
 	public void setRuleList(List<Rule> ruleList) {
 		this.ruleList = ruleList;
 	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public HashMap<String, DmnDecision> getDmnMap() {
+		return dmnMap;
+	}
+
+	/**
+	 * 
+	 * @param dmnMap
+	 */
+	public void setDmnMap(HashMap<String, DmnDecision> dmnMap) {
+		this.dmnMap = dmnMap;
+	}
 		
+	
 }

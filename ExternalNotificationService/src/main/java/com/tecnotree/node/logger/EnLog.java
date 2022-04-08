@@ -8,12 +8,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.tecnotree.exception.ExceptionCode;
-import com.tecnotree.output.util.GsCustomResponseMappingUtil;
+import com.tecnotree.output.util.EnCustomResponseMappingUtil;
 
 import net.sf.json.JSONObject;
 
-public class GsLog {
-   private static final Logger _log = LoggerFactory.getLogger(GsLog.class);
+public class EnLog {
+   private static final Logger _log = LoggerFactory.getLogger(EnLog.class);
    private static ConcurrentHashMap<String, Document> logMap = new ConcurrentHashMap();
 
    public static void setRootKey(String rootKey, Document logData) {
@@ -35,23 +35,23 @@ public class GsLog {
          public void run() {
             String errMsg;
             try {
-               Document doc = (Document)GsLog.logMap.get(rootKey);
+               Document doc = (Document)EnLog.logMap.get(rootKey);
                errMsg = doc.getInteger("statusCode") == 200 ? "SUCCESS" : "FAILED";
                doc.put("status", errMsg);
                _log.info("ExternalNotificationService Response: {}", JSONWriter.valueToString(doc));
                System.out.println(JSONWriter.valueToString(doc));
-               GsLog.logMap.remove(rootKey);
+               EnLog.logMap.remove(rootKey);
             } catch (Exception e) {
                errMsg = e.getLocalizedMessage();
-               GsLog._log.error("Error Occured While Writing The logs -> " + errMsg);
+               EnLog._log.error("Error Occured While Writing The logs -> " + errMsg);
                String msg = null == errMsg ? "LOGS PROCESSING FAILED DUE TO NULL VALUE" : errMsg;
-               JSONObject errorRes = GsCustomResponseMappingUtil.proccessException(ExceptionCode.EXCEPTION_CODE, msg);
+               JSONObject errorRes = EnCustomResponseMappingUtil.proccessException(ExceptionCode.EXCEPTION_CODE, msg);
                JSONObject response = new JSONObject();
                response.put("errorResponse", errorRes);
                response.put("transactionID", rootKey);
                response.put("message", "Error Occured While Printing The Logs But Request Processed Successfully");
                System.out.println(JSONWriter.valueToString(response));
-               GsLog.logMap.remove(rootKey);
+               EnLog.logMap.remove(rootKey);
             }
 
          }

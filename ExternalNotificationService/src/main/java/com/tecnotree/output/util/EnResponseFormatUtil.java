@@ -13,8 +13,8 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class GsResponseFormatUtil {
-    private static final Logger logger = LoggerFactory.getLogger(GsResponseFormatUtil.class);
+public class EnResponseFormatUtil {
+    private static final Logger logger = LoggerFactory.getLogger(EnResponseFormatUtil.class);
 
     public static String format(String str, Map<String, Object> values) {
         logger.info("Start of format() method of  ResponseFormatUtil.class");
