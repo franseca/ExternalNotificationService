@@ -23,7 +23,7 @@ public class EnCustomResponseMappingUtil {
       if (null != message && !message.isBlank()) {
          errmap.put("message", message);
       } else {
-         errmap.put("message", "External Notification service process failed");
+         errmap.put("message", "External Notification Configuration Interface service process failed");
       }
 
       logger.debug("Ended EnCustomResponseMappingUtil.class");
@@ -45,7 +45,7 @@ public class EnCustomResponseMappingUtil {
       if (null != message && !message.isBlank()) {
          values.put("message", message);
       } else {
-         values.put("message", "EXTERNAL NOTIFICATION SERVICE PROCESS SUCCESSFULLY COMPLETED");
+         values.put("message", "External Notification Configuration Interface service process succesfully completed");
       }
 
       logger.info("Ended EnCustomResponseMappingUtil.class");

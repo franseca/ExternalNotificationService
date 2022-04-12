@@ -272,9 +272,15 @@ public class RuleService {
 			logger.debug("dmnOutputColumnValue: {}", dmnOutputColumnValue);
 					
 			//IF THE VALUE OF THE DMN OUTPUT COLUMN IS EQUAL THE REJECT TX
-			if(dmnOutputColumnValue.equals(ruleTemp.getRuleDetail().getDmn().getRejectTx())) {
-				logger.debug("The DMN's output value ("+dmnOutputColumnValue+") is equal a RejectTx ("+ruleTemp.getRuleDetail().getDmn().getRejectTx()+")");
-				logger.debug("Exit of the rule and continue with the next rule \n");
+			if(dmnOutputColumnValue != null) {
+				if(dmnOutputColumnValue.equals(ruleTemp.getRuleDetail().getDmn().getRejectTx())) {
+					logger.debug("The DMN's output value ("+dmnOutputColumnValue+") is equal a RejectTx ("+ruleTemp.getRuleDetail().getDmn().getRejectTx()+")");
+					logger.debug("Exit of the rule and continue with the next rule \n");
+					return null;
+				}
+				
+			}else {
+				logger.info("Not found DMN Output Column in DMN: {}", ruleTemp.getRuleDetail().getDmn().getOutputColum());
 				return null;
 			}
 			
